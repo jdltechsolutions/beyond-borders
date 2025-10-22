@@ -60,13 +60,13 @@ export default function SignUpPage() {
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <p>
-                Thank you for signing up with Beyond Borders! We've sent a confirmation email to your inbox.
+                Thank you for signing up with Beyond Borders! We&apos;ve sent a confirmation email to your inbox.
               </p>
               <p className="font-medium text-foreground">
                 Please check your email and click the confirmation link to verify your account.
               </p>
               <p className="text-sm text-muted-foreground">
-                Don't forget to check your spam folder if you don't see the email within a few minutes.
+                Don&apos;t forget to check your spam folder if you don&apos;t see the email within a few minutes.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>

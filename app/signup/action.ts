@@ -1,6 +1,4 @@
 'use server'
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 
 type SignUpFormData = {
@@ -27,7 +25,8 @@ export async function signup(formData: SignUpFormData) {
       data: {
         full_name: formData.fullName,
         phone: formData.phone,
-      }
+      },
+      emailRedirectTo: `http://localhost:3000/dashboard`
     }
   })
   
