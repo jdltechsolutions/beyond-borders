@@ -24,8 +24,8 @@ model User {
   name        String?
   phone       String?
   role        Role      @default(CUSTOMER)
+  emailConfirmed  Boolean @default(false)
   bookings    Booking[]
-  inquiries   Inquiry[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -69,25 +69,4 @@ enum BookingStatus {
   CONFIRMED
   COMPLETED
   CANCELED
-}
-
-// -----------------------------
-// Inquiries
-// -----------------------------
-model Inquiry {
-  id          String    @id @default(cuid())
-  user        User?     @relation(fields: [userId], references: [id])
-  userId      String?
-  name        String?
-  email       String
-  phone       String?
-  message     String
-  status      InquiryStatus @default(OPEN)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-
-enum InquiryStatus {
-  OPEN
-  RESOLVED
 }
