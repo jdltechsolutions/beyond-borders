@@ -37,12 +37,24 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Redirect logged-in users away from auth pages
+  if (
+    user &&
+    (request.nextUrl.pathname.startsWith('/login') ||
+     request.nextUrl.pathname.startsWith('/signup'))
+  ) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  // Redirect logged-out users to login(except for public pages)
   if (
     !user &&
+    request.nextUrl.pathname !== '/' && // allow homepage
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/signup') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
-    !request.nextUrl.pathname.startsWith('/') &&
     !request.nextUrl.pathname.startsWith('/error')
   ) {
     // no user, potentially respond by redirecting the user to the login page
