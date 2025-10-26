@@ -26,15 +26,12 @@ export async function signup(formData: SignUpFormData) {
         full_name: formData.fullName,
         phone: formData.phone,
       },
-      emailRedirectTo: `http://localhost:3000/dashboard`
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`
     }
   })
   
   if (signUpError) {
-    console.error('Error creating user:', signUpError)
     return { error: signUpError.message }
   }
-  
-  console.log('New user created:', authData.user?.id)
   return { success: true }
 }
