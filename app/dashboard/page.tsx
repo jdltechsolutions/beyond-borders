@@ -4,9 +4,9 @@ import { SignOutButton } from "./sign-out-button"
 
 export default async function Dashboard() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: {user}, error } = await supabase.auth.getUser()
     
-    if (!user) {
+    if (!user || error) {
         redirect('/login')
     }
     

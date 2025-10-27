@@ -38,18 +38,18 @@ export async function signup(formData: SignUpFormData) {
   }
   
   // Add user to Prisma database
-  if (authData.user) {
-    await prisma.user.create({
-      data: {
-        id: authData.user.id,
-        email: formData.email,
-          name: formData.fullName,
-          phone: formData.phone,
-          emailConfirmed: false,
-          role: 'CUSTOMER'
-      }
-    })
-  }
+  // if (authData.user) {
+  //   await prisma.user.create({
+  //     data: {
+  //       id: authData.user.id,
+  //       email: formData.email,
+  //         name: formData.fullName,
+  //         phone: formData.phone,
+  //         emailConfirmed: false,
+  //         role: 'CUSTOMER'
+  //     }
+  //   })
+  // }
 
   return { success: true }
   } catch (error) {
