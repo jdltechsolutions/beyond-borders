@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select'
 import { Calendar, Users, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 type BookingFormData = {
   name: string
@@ -24,7 +25,15 @@ type BookingFormData = {
   notes?: string
 }
 
+type Service = {
+  id: string
+  name: string
+}
+
 export default function BookingForm() {
+  const [services, setServices] = useState<Service[]>([])
+  const [loadingServices, setLoadingServices] = useState(true)
+
   const {
     register,
     handleSubmit,
@@ -36,6 +45,24 @@ export default function BookingForm() {
       notes: ''
     }
   })
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await fetch('/api/services')
+        if (response.ok) {
+          const data = await response.json()
+          setServices(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch services:', error)
+      } finally {
+        setLoadingServices(false)
+      }
+    }
+
+    fetchServices()
+  }, [])
 
   const onSubmit = async (data: BookingFormData) => {
     // Form submission logic will go here
@@ -136,17 +163,16 @@ export default function BookingForm() {
                   control={control}
                   rules={{ required: 'Please select a service' }}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={loadingServices}>
                       <SelectTrigger id="service" className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2">
-                        <SelectValue placeholder="Choose a service" />
+                        <SelectValue placeholder={loadingServices ? "Loading services..." : "Choose a service"} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="safari-tour">Safari Tour</SelectItem>
-                        <SelectItem value="mountain-trek">Mountain Trek</SelectItem>
-                        <SelectItem value="beach-resort">Beach Resort Package</SelectItem>
-                        <SelectItem value="city-tour">City Cultural Tour</SelectItem>
-                        <SelectItem value="flight-booking">Flight Booking</SelectItem>
-                        <SelectItem value="accommodation">Accommodation Only</SelectItem>
+                        {services.map((service) => (
+                          <SelectItem key={service.id} value={service.id}>
+                            {service.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   )}
