@@ -11,18 +11,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Calendar, Users, MessageSquare } from 'lucide-react'
+import { Calendar, Users, MessageSquare, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { createClient } from '@/utils/supabase/client'
+import { useRouter } from 'next/navigation'
+import { createBooking } from './action'
+import { toast } from 'sonner'
 
 type BookingFormData = {
-  name: string
-  email: string
-  phone: string
   service: string
-  date: string
+  startDate: string
+  endDate: string
   groupSize: string
   notes?: string
+  bookingForSomeoneElse: boolean
+  guestName?: string
+  guestEmail?: string
+  guestPhone?: string
 }
 
 type Service = {
@@ -33,20 +39,39 @@ type Service = {
 export default function BookingForm() {
   const [services, setServices] = useState<Service[]>([])
   const [loadingServices, setLoadingServices] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [bookingForSomeoneElse, setBookingForSomeoneElse] = useState(false)
+  const router = useRouter()
 
   const {
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors, isSubmitting }
   } = useForm<BookingFormData>({
     defaultValues: {
       groupSize: '1',
-      notes: ''
+      notes: '',
+      bookingForSomeoneElse: false
     }
   })
 
+  //check if user is authenticated before accessing the booking form
   useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        router.push('/login?redirect=/booking')
+        return
+      }
+      
+      setUserId(user.id)
+    }
+
+    // fetch services from services API
     const fetchServices = async () => {
       try {
         const response = await fetch('/api/services')
@@ -61,12 +86,36 @@ export default function BookingForm() {
       }
     }
 
+    checkAuth()
     fetchServices()
-  }, [])
+  }, [router])
 
   const onSubmit = async (data: BookingFormData) => {
-    // Form submission logic will go here
-    console.log('Form submitted:', data)
+    if (!userId) return
+
+    const result = await createBooking({
+      serviceId: data.service,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      groupSize: data.groupSize,
+      notes: data.notes,
+      guestName: data.guestName,
+      guestEmail: data.guestEmail,
+      guestPhone: data.guestPhone,
+    })
+
+    if (result.error) {
+      toast.error(result.error, {
+        className: 'booking-toast',
+        description: 'Please try again.',
+      })
+    } else {
+      toast.success('Booking submitted successfully!', {
+        className: 'booking-toast',
+        description: "We'll contact you within 24 hours to confirm your booking.",
+      })
+      router.push('/bookings')
+    }
   }
 
   return (
@@ -85,73 +134,6 @@ export default function BookingForm() {
         {/* Form Card */}
         <div className="bg-card border border-border rounded-lg shadow-lg p-8 space-y-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Personal Information Section */}
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-foreground border-b border-border pb-2">Personal Information</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm font-medium text-foreground">Full Name *</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="John Doe"
-                    className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2 transition-all duration-200"
-                    {...register('name', { 
-                      required: 'Full name is required',
-                      minLength: {
-                        value: 2,
-                        message: 'Name must be at least 2 characters'
-                      }
-                    })}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium text-foreground">Email Address *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="john@example.com"
-                    className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2 transition-all duration-200"
-                    {...register('email', { 
-                      required: 'Email is required',
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: 'Please enter a valid email address'
-                      }
-                    })}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email.message}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-medium text-foreground">Phone Number *</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+1 (555) 000-0000"
-                  className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2 transition-all duration-200"
-                  {...register('phone', { 
-                    required: 'Phone number is required',
-                    pattern: {
-                      value: /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/,
-                      message: 'Please enter a valid phone number'
-                    }
-                  })}
-                />
-                {errors.phone && (
-                  <p className="text-sm text-destructive">{errors.phone.message}</p>
-                )}
-              </div>
-            </div>
-
             {/* Booking Details Section */}
             <div className="space-y-4">
               <h3 className="text-xl font-semibold text-foreground border-b border-border pb-2">Booking Details</h3>
@@ -184,81 +166,170 @@ export default function BookingForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="date" className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Label htmlFor="startDate" className="text-sm font-medium text-foreground flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-primary" />
-                    Preferred Date *
+                    Start Date *
                   </Label>
                   <Input
-                    id="date"
+                    id="startDate"
                     type="date"
                     className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2 transition-all duration-200"
                     min={new Date().toISOString().split('T')[0]}
-                    {...register('date', { 
-                      required: 'Please select a date',
-                      validate: (value) => {
-                        const selectedDate = new Date(value)
-                        const today = new Date()
-                        today.setHours(0, 0, 0, 0)
-                        return selectedDate >= today || 'Please select a future date'
-                      }
-                    })}
+                    {...register('startDate', { required: 'Please select a start date' })}
                   />
-                  {errors.date && (
-                    <p className="text-sm text-destructive">{errors.date.message}</p>
+                  {errors.startDate && (
+                    <p className="text-sm text-destructive">{errors.startDate.message}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="groupSize" className="text-sm font-medium text-foreground flex items-center gap-2">
-                    <Users className="w-4 h-4 text-primary" />
-                    Group Size *
+                  <Label htmlFor="endDate" className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    End Date *
                   </Label>
-                  <Controller
-                    name="groupSize"
-                    control={control}
-                    rules={{ required: 'Please select group size' }}
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger id="groupSize" className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                            <SelectItem key={num} value={num.toString()}>
-                              {num} {num === 1 ? 'Person' : 'People'}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="10+">10+ People</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
+                  <Input
+                    id="endDate"
+                    type="date"
+                    className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2 transition-all duration-200"
+                    min={new Date().toISOString().split('T')[0]}
+                    {...register('endDate', { 
+                      required: 'Please select an end date',
+                      validate: (value) => {
+                        const start = watch('startDate')
+                        if (start && value < start) {
+                          return 'End date must be after start date'
+                        }
+                        return true
+                      }
+                    })}
                   />
-                  {errors.groupSize && (
-                    <p className="text-sm text-destructive">{errors.groupSize.message}</p>
+                  {errors.endDate && (
+                    <p className="text-sm text-destructive">{errors.endDate.message}</p>
                   )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes" className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-primary" />
-                  Additional Notes (Optional)
+                <Label htmlFor="groupSize" className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Users className="w-4 h-4 text-primary" />
+                  Group Size *
                 </Label>
-                <textarea
-                  id="notes"
-                  rows={4}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 resize-none"
-                  placeholder="Any special requirements, dietary restrictions, or questions..."
-                  {...register('notes')}
+                <Controller
+                  name="groupSize"
+                  control={control}
+                  rules={{ required: 'Please select group size' }}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="groupSize" className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                          <SelectItem key={num} value={num.toString()}>
+                            {num} {num === 1 ? 'Person' : 'People'}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="10+">10+ People</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
+                {errors.groupSize && (
+                  <p className="text-sm text-destructive">{errors.groupSize.message}</p>
+                )}
               </div>
+            </div>
+
+            {/* Booking for Someone Else Section */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="bookingForSomeoneElse"
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  {...register('bookingForSomeoneElse')}
+                  onChange={(e) => setBookingForSomeoneElse(e.target.checked)}
+                />
+                <Label htmlFor="bookingForSomeoneElse" className="text-sm font-medium text-foreground flex items-center gap-2 cursor-pointer">
+                  <UserPlus className="w-4 h-4 text-primary" />
+                  I&apos;m booking for someone else
+                </Label>
+              </div>
+
+              {bookingForSomeoneElse && (
+                <div className="space-y-4 p-4 bg-muted/50 rounded-lg border border-border">
+                  <h3 className="text-lg font-semibold text-foreground">Guest Information</h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="guestName" className="text-sm font-medium text-foreground">Guest Full Name *</Label>
+                    <Input
+                      id="guestName"
+                      type="text"
+                      placeholder="Jane Doe"
+                      className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2 transition-all duration-200"
+                      {...register('guestName', { 
+                        required: bookingForSomeoneElse ? 'Guest name is required' : false,
+                        minLength: {
+                          value: 2,
+                          message: 'Name must be at least 2 characters'
+                        }
+                      })}
+                    />
+                    {errors.guestName && (
+                      <p className="text-sm text-destructive">{errors.guestName.message}</p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="guestEmail" className="text-sm font-medium text-foreground">Guest Email *</Label>
+                      <Input
+                        id="guestEmail"
+                        type="email"
+                        placeholder="jane@example.com"
+                        className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2 transition-all duration-200"
+                        {...register('guestEmail', { 
+                          required: bookingForSomeoneElse ? 'Guest email is required' : false,
+                          pattern: {
+                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                            message: 'Please enter a valid email address'
+                          }
+                        })}
+                      />
+                      {errors.guestEmail && (
+                        <p className="text-sm text-destructive">{errors.guestEmail.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="guestPhone" className="text-sm font-medium text-foreground">Guest Phone *</Label>
+                      <Input
+                        id="guestPhone"
+                        type="tel"
+                        placeholder="+1 (555) 000-0000"
+                        className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2 transition-all duration-200"
+                        {...register('guestPhone', { 
+                          required: bookingForSomeoneElse ? 'Guest phone is required' : false,
+                          pattern: {
+                            value: /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/,
+                            message: 'Please enter a valid phone number'
+                          }
+                        })}
+                      />
+                      {errors.guestPhone && (
+                        <p className="text-sm text-destructive">{errors.guestPhone.message}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}
             <div className="pt-4">
               <Button 
                 type="submit" 
-                disabled={isSubmitting}
+                disabled={isSubmitting || !userId}
                 className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50"
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Booking Request'}
