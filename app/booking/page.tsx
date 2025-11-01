@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Calendar, Users, MessageSquare, UserPlus } from 'lucide-react'
+import { Calendar, Users, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
