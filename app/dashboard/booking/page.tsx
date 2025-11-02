@@ -64,7 +64,7 @@ export default function BookingForm() {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
-        router.push('/login?redirect=/booking')
+        router.push('/login?redirect=/dashboard/booking')
         return
       }
       
@@ -114,7 +114,7 @@ export default function BookingForm() {
         className: 'booking-toast',
         description: "We'll contact you within 24 hours to confirm your booking.",
       })
-      router.push('/bookings')
+      router.push('/dashboard/bookings')
     }
   }
 

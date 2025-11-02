@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {
@@ -11,6 +11,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Calendar, Users, FileText, Package, Clock } from "lucide-react"
+import { useSearchParams, useRouter } from "next/navigation"
 
 type BookingUI = {
     id: string
@@ -91,10 +92,17 @@ function StatusBadge({ status }: { status: BookingUI["status"] }) {
 }
 
 export default function Bookings() {
-    // UI-only state for filters
-    const [statusFilter, setStatusFilter] = useState<"ALL" | BookingUI["status"]>(
-        "ALL",
-    )
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    // UI-only state for filters; seed from query param if present
+    const initial = (searchParams?.get("status") as BookingUI["status"] | "ALL" | null) ?? "ALL"
+    const [statusFilter, setStatusFilter] = useState<"ALL" | BookingUI["status"]>(initial)
+
+    // Keep state in sync when URL query changes (e.g., via sidebar submenu)
+    useEffect(() => {
+        const q = (searchParams?.get("status") as BookingUI["status"] | "ALL" | null) ?? "ALL"
+        setStatusFilter(q)
+    }, [searchParams])
 
     const filtered = useMemo(() => {
         return statusFilter === "ALL"
@@ -125,10 +133,14 @@ export default function Bookings() {
                     <div className="flex items-end gap-3">
                         <div className="space-y-1">
                             <Label htmlFor="status">Status</Label>
-                            <Select
-                                value={statusFilter}
-                                onValueChange={(v) => setStatusFilter(v as "ALL" | BookingUI["status"])}
-                            >
+                                                        <Select
+                                                                value={statusFilter}
+                                                                onValueChange={(v) => {
+                                                                    setStatusFilter(v as "ALL" | BookingUI["status"])
+                                                                    const url = v === "ALL" ? "/dashboard/bookings" : `/dashboard/bookings?status=${v}`
+                                                                    router.push(url)
+                                                                }}
+                                                        >
                                 <SelectTrigger id="status" className="w-[160px] h-10">
                                     <SelectValue placeholder="All" />
                                 </SelectTrigger>
