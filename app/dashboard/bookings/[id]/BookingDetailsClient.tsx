@@ -1,7 +1,9 @@
 "use client"
 
-import { useMemo, useTransition } from "react"
+import { useEffect, useMemo, useTransition } from "react"
+import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
+// removed duplicate import
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { updateBookingStatus } from "@/app/dashboard/bookings/[id]/actions"
 
@@ -40,11 +42,22 @@ export default function BookingDetailsClient({
   permissions: Permissions
 }) {
   const router = useRouter()
+  const sp = useSearchParams()
   const dateRange = useMemo(() => {
     const s = new Date(booking.startDate)
     const e = new Date(booking.endDate)
     return `${s.toLocaleDateString()} → ${e.toLocaleDateString()}`
   }, [booking.startDate, booking.endDate])
+
+  // Success toast after saving from edit page
+  useEffect(() => {
+    if (sp.get("updated") === "1") {
+      import("sonner").then(({ toast }) => toast.success("Changes saved"))
+      const params = new URLSearchParams(sp.toString())
+      params.delete("updated")
+      router.replace(`?${params.toString()}`)
+    }
+  }, [sp, router])
 
   return (
     <div className="space-y-6">
