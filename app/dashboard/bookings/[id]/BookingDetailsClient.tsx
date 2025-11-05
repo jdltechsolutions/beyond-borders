@@ -1,6 +1,9 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { updateBookingStatus } from "@/app/dashboard/bookings/[id]/actions"
 
 export type Role = "admin" | "customer"
 export type Status = "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED"
@@ -36,6 +39,7 @@ export default function BookingDetailsClient({
   role: Role
   permissions: Permissions
 }) {
+  const router = useRouter()
   const dateRange = useMemo(() => {
     const s = new Date(booking.startDate)
     const e = new Date(booking.endDate)
@@ -86,7 +90,15 @@ export default function BookingDetailsClient({
             </a>
           )}
           {permissions.canChangeStatus && (
-            <button className="rounded-md border px-3 py-1.5 text-sm hover:bg-neutral-50">Change status</button>
+            <ChangeStatusSelect
+              current={booking.status}
+              onChange={async (next) => {
+                const res = await updateBookingStatus(booking.id, next)
+                if (!('error' in res)) {
+                  router.refresh()
+                }
+              }}
+            />
           )}
           {permissions.canRefund && (
             <button className="rounded-md border px-3 py-1.5 text-sm hover:bg-neutral-50">Refund</button>
@@ -119,4 +131,28 @@ function StatusBadge({ status }: { status: Status }) {
       ? "bg-blue-100 text-blue-800"
       : "bg-neutral-200 text-neutral-800"
   return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${styles}`}>{status}</span>
+}
+
+function ChangeStatusSelect({ current, onChange }: { current: Status; onChange: (s: Status) => Promise<void> }) {
+  const [isPending, startTransition] = useTransition()
+  return (
+    <Select
+      value={current}
+      onValueChange={(v) =>
+        startTransition(async () => {
+          await onChange(v as Status)
+        })
+      }
+    >
+      <SelectTrigger className="h-9">
+        <SelectValue placeholder="Change status" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="PENDING">Pending</SelectItem>
+        <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+        <SelectItem value="COMPLETED">Completed</SelectItem>
+        <SelectItem value="CANCELLED">Cancelled</SelectItem>
+      </SelectContent>
+    </Select>
+  )
 }
