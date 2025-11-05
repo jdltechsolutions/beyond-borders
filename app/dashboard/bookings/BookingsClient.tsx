@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -160,8 +161,8 @@ export default function BookingsClient({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" className="h-9">
-                      View details
+                    <Button asChild variant="outline" className="h-9">
+                      <Link href={`/dashboard/bookings/${b.id}`}>View details</Link>
                     </Button>
                   </div>
                 </div>
