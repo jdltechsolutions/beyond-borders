@@ -1,5 +1,7 @@
 import AboutSection from "@/components/About";
 import Ourclients from "@/components/Clients";
+import ContactSection from "@/components/ContactSection";
+import Footer from "@/components/Footer";
 import Hero from "@/components/Hero";
 import Navbar from "@/components/Navbar";
 import PhotoGallery from "@/components/Photos";
@@ -16,6 +18,8 @@ export default function Home() {
       <Ourclients />
       <PhotoGallery />
       <SignupSection />
+      <ContactSection />
+      <Footer />
     </div>
   );
 }
