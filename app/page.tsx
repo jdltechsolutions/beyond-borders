@@ -4,6 +4,7 @@ import Hero from "@/components/Hero";
 import Navbar from "@/components/Navbar";
 import PhotoGallery from "@/components/Photos";
 import ServicesSection from "@/components/Services";
+import SignupSection from "@/components/SignupSection";
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
       <ServicesSection />
       <Ourclients />
       <PhotoGallery />
+      <SignupSection />
     </div>
   );
 }

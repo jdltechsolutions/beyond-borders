@@ -1,6 +1,7 @@
 'use client'
 
 import Link from "next/link"
+import { Suspense } from "react"
 import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,7 +26,11 @@ type SignUpFormData = {
   confirmPassword: string
 }
 
-export default function SignUpPage() {
+import { useSearchParams } from "next/navigation"
+
+function SignUpPageInner() {
+  const searchParams = useSearchParams()
+  const prefillEmail = searchParams.get('email') || ''
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   
@@ -165,19 +170,20 @@ export default function SignUpPage() {
               >
                 Email Address *
               </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your.email@example.com"
-                className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2 transition-all duration-200"
-                {...register("email", { 
-                  required: "Please enter your email",
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Please enter a valid email address"
-                  }
-                })}
-              />
+                <Input
+                  id="email"
+                  type="email"
+                  defaultValue={prefillEmail}
+                  placeholder="your.email@example.com"
+                  className="h-11 bg-background border-border focus:border-primary focus:ring-primary/20 focus:ring-2 transition-all duration-200"
+                  {...register("email", { 
+                    required: "Please enter your email",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Please enter a valid email address"
+                    }
+                  })}
+                />
               {errors.email && (
                 <p className="text-sm text-red-500">{errors.email.message}</p>
               )}
@@ -278,5 +284,13 @@ export default function SignUpPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}> 
+      <SignUpPageInner />
+    </Suspense>
   )
 }
